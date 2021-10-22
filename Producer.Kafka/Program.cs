@@ -1,7 +1,7 @@
-﻿using System;
+﻿using Confluent.Kafka;
+using System;
 using System.IO;
 using System.Threading.Tasks;
-using Confluent.Kafka;
 using Microsoft.Extensions.Configuration;
 using Serilog;
 
@@ -22,7 +22,7 @@ namespace Producer.Kafka
                 return config.GetSection("KafkaConfig").Get<KafkaConfig>();
             }
         }
-        
+
         static async Task Main(string[] args)
         {
             var logger = new LoggerConfiguration()
@@ -30,7 +30,7 @@ namespace Producer.Kafka
                 .CreateLogger();
             logger.Information("Testando o envio de mensagens com Kafka");
 
-            if (string.IsNullOrWhiteSpace(KafkaConfig.Topic) || string.IsNullOrWhiteSpace(KafkaConfig.Url))
+            if (string.IsNullOrWhiteSpace(KafkaConfig.Url))
             {
                 logger.Error(
                     "Informações do Kafka não configuradas! Favor ajustar o appsettings.json.");
@@ -38,7 +38,6 @@ namespace Producer.Kafka
             }
 
             logger.Information($"BootstrapServers = {KafkaConfig.Url}");
-            logger.Information($"Topic = {KafkaConfig.Topic}");
 
             try
             {
@@ -47,19 +46,38 @@ namespace Producer.Kafka
                     BootstrapServers = KafkaConfig.Url
                 };
 
-                using (var producer = new ProducerBuilder<Null, string>(config).Build())
+                using (var producer = new ProducerBuilder<string, Order>(config)
+                    .SetValueSerializer(new DataSerializer<Order>())
+                    .Build())
                 {
-                    for (int i = 0; i < args.Length; i++)
+                    logger.Information($"Topic = tp_1");
+
+                    for (int i = 1; i < 2; i++)
                     {
-                        var result = await producer.ProduceAsync(
-                            KafkaConfig.Topic,
-                            new Message<Null, string>
-                                { Value = args[i] });
+                        var result1 = await producer.ProduceAsync(
+                            "tp_1",
+                            new Message<string, Order>
+                            {
+                                Value = new Order() { Amount = new decimal(10 * i), Number = $"00{i}"},
+                                Key = Guid.NewGuid().ToString()
+                            });
 
                         logger.Information(
-                            $"Mensagem: {args[i]} | " +
-                            $"Status: { result.Status.ToString()}");
+                            $"Mensagem: Mensagem {i} | " +
+                            $"Status: {result1.Status.ToString()}");
                     }
+                }
+
+                using (var producer = new ProducerBuilder<string, string>(config).Build())
+                {
+                    var result = await producer.ProduceAsync(
+                        "tp_2",
+                        new Message<string, string>
+                            {Value = "Mensagem 2"});
+
+                    logger.Information(
+                        $"Mensagem: Mensagem 2 | " +
+                        $"Status: {result.Status.ToString()}");
                 }
 
                 logger.Information("Concluído o envio de mensagens");

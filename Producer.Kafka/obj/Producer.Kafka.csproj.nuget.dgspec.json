@@ -40,7 +40,15 @@
           "dependencies": {
             "Confluent.Kafka": {
               "target": "Package",
-              "version": "[1.4.0, )"
+              "version": "[1.8.2, )"
+            },
+            "Confluent.SchemaRegistry": {
+              "target": "Package",
+              "version": "[1.8.2, )"
+            },
+            "Confluent.SchemaRegistry.Serdes": {
+              "target": "Package",
+              "version": "[1.3.0, )"
             },
             "Microsoft.Extensions.Configuration": {
               "target": "Package",
@@ -49,6 +57,10 @@
             "Microsoft.Extensions.Hosting": {
               "target": "Package",
               "version": "[5.0.0, )"
+            },
+            "Newtonsoft.Json": {
+              "target": "Package",
+              "version": "[13.0.1, )"
             },
             "Serilog.Sinks.Console": {
               "target": "Package",
